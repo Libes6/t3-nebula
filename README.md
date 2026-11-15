@@ -19,6 +19,8 @@ Built entirely on T3 Code's theme system (~15k of the 20k-character CSS limit).
 
 ![Usage page](media/usage.png)
 
+<sub>Dollar amounts on the Usage page are T3 Code's estimates at API prices, not an actual bill. These screenshots come from two $20/month subscriptions.</sub>
+
 ## Install
 
 1. Download [`t3-nebula.json`](t3-nebula.json).
