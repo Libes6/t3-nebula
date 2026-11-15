@@ -1,6 +1,6 @@
 # T3 Nebula
 
-A drifting-nebula dark theme for [T3 Code](https://t3.codes). One file, no fork.
+A drifting-nebula dark theme for T3 Code. One file, no fork.
 
 Built entirely on T3 Code's theme system (~15k of the 20k-character CSS limit).
 
