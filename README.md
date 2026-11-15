@@ -4,6 +4,8 @@ A drifting-nebula dark theme for T3 Code. One file, no fork.
 
 Built entirely on T3 Code's theme system (~15k of the 20k-character CSS limit).
 
+![T3 Nebula chat](media/chat.png)
+
 ## What changes
 
 - **Living background**: blue, magenta, crimson and amber nebula clouds slowly drifting over a fine dot grid, in the chat, Usage and Settings pages
@@ -12,6 +14,10 @@ Built entirely on T3 Code's theme system (~15k of the 20k-character CSS limit).
 - **Usage shows what you've *used***: limit cards and the thread-details panel read `35% used` instead of `65% left`, bars fill from the left with the used part, and the even-pace tick is flipped to match
 - **Glass panels**: thread details, Usage header and limit cards on frosted glass
 - Nebula-tinted selection, focus rings, caret and scrollbars
+
+## Preview
+
+![Usage page](media/usage.png)
 
 ## Install
 
