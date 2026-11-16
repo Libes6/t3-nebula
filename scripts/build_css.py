@@ -1,62 +1,89 @@
-import json,sys
-p=sys.argv[1]; d=json.load(open(p))
-G3='#4e66d8,#b2378d 55%,#cb325b'          # nebula gradient
-CUR='[aria-current]:not([aria-current="false"])'
-W=f':root:has([data-sidebar-row]{CUR}[aria-busy="true"])'   # current thread is working
-r=[]
-# --- base (unchanged values, minified) ---
-r+=['@keyframes nebula-drift{0%,100%{background-position:35vw -25vh,-40vw 10vh,45vw 45vh,-20vw 60vh,0 0}50%{background-position:-35vw -10vh,35vw 35vh,-35vw 50vh,40vw 35vh,0 0}}',
-'@keyframes nebula-glow{0%,100%{border-color:#5d70ce80;box-shadow:0 0 20px #4056ef2b}33%{border-color:#b0408a90;box-shadow:0 0 22px #c52f9030}66%{border-color:#c0395590;box-shadow:0 0 22px #d9305130}85%{border-color:#be885390;box-shadow:0 0 20px #dc9f4326}}',
-'@keyframes nebula-send{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}',
-'@keyframes nebula-breath{0%,100%{box-shadow:0 0 18px #b2378d40,0 0 0 1px #cb4fa060}50%{box-shadow:0 0 34px #4e66d866,0 0 0 1px #6d82ffa0}}',
-'.dark :is([data-workspace-area="conversation"],[data-workspace-area="settings"],:has(>div>header[class*="usage-header"])){background-color:#120a18!important;background-image:radial-gradient(ellipse at center,#364ecb81 0%,#2b3b9f30 38%,transparent 69%),radial-gradient(ellipse at center,#95137775 0%,#72135630 38%,transparent 70%),radial-gradient(ellipse at center,#cf1a4785 0%,#7c184430 38%,transparent 70%),radial-gradient(ellipse at center,#ca8c426b 0%,#89513025 38%,transparent 70%),radial-gradient(circle,#f2d1f60c .65px,transparent .9px)!important;background-size:100% 110%,100% 120%,100% 110%,90% 100%,4px 4px!important;background-repeat:no-repeat,no-repeat,no-repeat,no-repeat,repeat!important;animation:nebula-drift 28s ease-in-out infinite!important}',
-'.dark .messages-timeline-scroll{background:transparent!important}',
-'.dark [data-chat-header]{background:#120b1ad9!important;border-bottom:1px solid #be86ce14!important;backdrop-filter:blur(16px)}',
-'.dark [data-slot="sidebar-inner"]{background:#1a0d22ea!important}',
-'.dark [data-slot="sidebar"]{border-color:#bc66b71c!important}',
-'.dark [data-thread-item]{border-radius:6px}',
-'.dark [data-user-message-bubble]{background:#cf9ecb1a!important;border:1px solid #f4c7f812;box-shadow:0 2px 12px #12091a18}',
-'.dark [data-slot="composer-host"]{background:#220d23e8!important;border:1px solid #86407770!important;border-radius:18px!important;backdrop-filter:blur(18px);animation:nebula-glow 16s linear infinite}',
-f'.dark [data-chat-composer-form] button[type="submit"]{{background:linear-gradient(120deg,#4e66d8,#b2378d,#cb325b,#cf9555,#4e66d8)!important;background-size:300% 300%!important;color:#fff!important;animation:nebula-send 9s ease infinite!important}}',
-'.dark [data-chat-composer-form] button[type="submit"]:disabled{opacity:.5!important}',
-# composer with attached drawer (questions, approvals): glow goes to the outer surface, inner host stays flat
-'.dark [data-chat-composer-surface]:has([data-composer-banner-surface="attached"],[data-chat-composer-top-drawer]){background:#220d23e8!important;border:1px solid #86407770!important;border-radius:18px!important;backdrop-filter:blur(18px);animation:nebula-glow 16s linear infinite}',
-'.dark [data-chat-composer-surface]:has([data-composer-banner-surface="attached"],[data-chat-composer-top-drawer]) [data-slot="composer-host"]{background:transparent!important;border-color:transparent!important;box-shadow:none!important;animation:none!important;backdrop-filter:none}',
-'.dark [data-thread-details-card]{background:#261229ce!important;border:1px solid #ba77af25!important;backdrop-filter:blur(16px)}',
-'.dark .chat-markdown-codeblock{background:#150f24e8!important;border:1px solid #b993c826}',
+"""Build t3-nebula.json = original Nebula (src/nebula-base.json) + extras.
+
+usage: python3 scripts/build_css.py [out.json]
+"""
+import json, os, sys
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "t3-nebula.json")
+d = json.load(open(os.path.join(ROOT, "src", "nebula-base.json")))
+css = d["css"]
+
+G = "#3f55e0,#a0309f 38%,#e0204f 68%,#e8a040"   # original Nebula gradient
+USAGE = ':has(>div>header[class*="usage-header"])'
+PAGES = f'[data-workspace-area="settings"],{USAGE}'
+
+# 1. Nebula background on Settings and Usage too (same rule as the chat canvas)
+css = css.replace("[data-chat-canvas]{background-image", f":is([data-chat-canvas],{PAGES}){{background-image", 1)
+css = css.replace("@media (prefers-reduced-motion:reduce){[data-chat-canvas],",
+                  f"@media (prefers-reduced-motion:reduce){{[data-chat-canvas],{PAGES},", 1)
+# softer dot grid (fine, faint light dots instead of coarse dark ones)
+for a, b in [("radial-gradient(rgba(0,0,0,.28) 1px,transparent 1.6px)", "radial-gradient(circle,rgba(242,209,246,.05) .65px,transparent .9px)"),
+             ("background-size:7px 7px,", "background-size:4px 4px,")]:
+    assert css.count(a) == 1, a
+    css = css.replace(a, b)
+# calmer, darker palette (our earlier look): deep blue core, magenta/red glow low, dark edges
+for a, b in [("rgba(44,66,200,0.75),rgba(44,66,200,0.34)", "rgba(54,78,203,0.5),rgba(43,59,159,0.19)"),
+             ("rgba(210,140,50,0.62),rgba(210,140,50,0.28)", "rgba(202,140,66,0.3),rgba(137,81,48,0.12)"),
+             ("rgba(140,28,124,0.62),rgba(140,28,124,0.28)", "rgba(149,19,119,0.42),rgba(114,19,86,0.17)"),
+             ("rgba(222,20,64,0.78),rgba(222,20,64,0.35)", "rgba(207,26,71,0.45),rgba(124,24,68,0.18)"),
+             ("rgba(190,20,70,0.45),rgba(190,20,70,0.2)", "rgba(190,20,70,0.25),rgba(190,20,70,0.1)"),
+             ("rgba(70,16,60,0.7),rgba(70,16,60,0.32)", "rgba(110,22,70,0.55),rgba(70,16,60,0.22)"),
+             ("background-color:#0b060d", "background-color:#120a18")]:
+    assert css.count(a) == 1, a
+    css = css.replace(a, b)
+assert css.count(PAGES) == 2, "base CSS changed, update the anchors"
+
+x = []
+x += [
+ f':is({PAGES}) :is([data-settings-page-scroll],.bg-background){{background:transparent!important}}',
+ 'header[class*="usage-header"]{background:rgba(14,7,16,.55)!important;border-bottom:1px solid rgba(255,255,255,.07)!important}',
 ]
-# --- 4. working state: faster glow + breathing composer, send button spins faster ---
-r+=[f'.dark{W} [data-slot="composer-host"]{{animation:nebula-glow 3s linear infinite,nebula-breath 2.4s ease-in-out infinite!important}}',
-f'.dark{W} [data-chat-composer-form] button[type="submit"]{{animation:nebula-send 2s ease infinite!important}}',
-f'.dark [data-sidebar-row][aria-busy="true"]{{background:linear-gradient(90deg,#4e66d81f,#b2378d2e,#4e66d81f) 0 0/200% 100%!important;animation:nebula-send 2.4s linear infinite}}']
-# --- 10. selection, focus, caret, scrollbar ---
-r+=['.dark ::selection{background:#b2378d70;color:#fff}',
-'.dark :focus-visible{outline-color:#d65bb0!important}',
-'.dark [data-slot="composer-host"] [contenteditable],.dark [data-slot="composer-host"] textarea{caret-color:#e77cc3}',
-f'.dark [data-slot="scroll-area-thumb"]{{background:linear-gradient(180deg,{G3})!important;opacity:.45}}',
-'.dark [data-slot="scroll-area-thumb"]:hover{opacity:.8}']
-# --- usage & settings pages: transparent inner layers, glass header ---
-r+=['.dark :is([data-workspace-area="settings"],:has(>div>header[class*="usage-header"])) :is([data-settings-page-scroll],.bg-background){background:transparent!important}',
-'.dark header[class*="usage-header"]{background:#120b1ad9!important;border-bottom:1px solid #be86ce14!important;backdrop-filter:blur(16px)}']
-# --- usage: used instead of left ---
-C='.dark .p-4:has(>div>div>[aria-label*="% left"])'
-B='.dark button[aria-label*="% left"]'
-R='.dark [class*="grid-cols-subgrid"][aria-label$="% left"]'
-r+=[C+'{background:#261229ce!important;border:1px solid #ba77af2e!important;border-radius:14px!important;backdrop-filter:blur(16px);box-shadow:0 4px 24px #0c061226}',
-f'{C} .text-3xl,{C} .text-3xl+span>span:first-child,{R}>span:last-child{{font-size:0!important}}',
-C+' .text-3xl::after{content:counter(nu) "%";font-size:1.875rem;line-height:2.25rem}',
-C+' .text-3xl+span>span:first-child::after{content:"used";font-size:.875rem}',
-R+'>span:last-child::after{content:counter(nu) "%";font-size:.75rem}',
-B+'{transform:scaleX(-1);background:#1c0f23!important}',
-f'{B}>span:not([class~="w-0.5"]),{B}>div:last-child{{transform:scaleX(-1)}}',
-B+f'>div:first-child>div{{background:repeating-linear-gradient(135deg,#ffffff24 0 1px,transparent 1px 6px),linear-gradient(270deg,{G3})!important;opacity:.8}}',
-B+' [class~="left-0"]{background:#1c0f23!important;opacity:1!important}',
-B+' [class~="right-0"]{display:none!important}',
-B+'>[class~="w-0.5"]{box-shadow:0 0 6px #f2c6ffcc}',
-R+f'>span.relative{{transform:scaleX(-1);height:4px;background:linear-gradient(270deg,{G3})!important;box-shadow:0 0 8px #b2378d40}}',
-R+'>span.relative>span[class~="left-0"]{background:#3a2643!important}']
-# counters: " N% left" can't collide (" 5%" never matches "95%")
-r+=[f':has(>*>*>[aria-label*=" {n}% left"]),[aria-label$=" {n}% left"]{{counter-reset:nu {100-n}}}' for n in range(101)]
-d['css']="\n".join(r)
-json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)
-print(len(d['css']))
+# 2. Composer with an attached drawer (questions, approvals): no double frame
+x += ['[data-chat-composer-surface]:has([data-composer-banner-surface="attached"],[data-chat-composer-top-drawer]) [data-slot="composer-host"]{background:transparent!important;backdrop-filter:none;box-shadow:none!important;animation:none!important}']
+# Warning banner has its own pseudo-element outline, independently of its parents.
+x += [
+ '[data-composer-banner-surface][data-variant="warning"]{background:transparent!important;border:0!important;outline:0!important;box-shadow:none!important}',
+ '[data-composer-banner-surface][data-variant="warning"]::before,[data-composer-banner-surface][data-variant="warning"]::after{content:none!important;display:none!important;border:0!important;box-shadow:none!important;background:none!important}',
+]
+# With the banner backdrop removed, remove its deliberate overlap with the input.
+x += [
+ '[data-slot="composer-banner-attachment"]:has([data-composer-banner-surface][data-variant="warning"]){margin-bottom:0!important}',
+ '[data-composer-banner-surface][data-variant="warning"]{--chat-composer-attachment-overlap:0px!important;padding-bottom:8px!important}',
+]
+# 3. Agent working: composer glow speeds up, running thread shimmers
+W = ':root:has([data-sidebar-row][aria-current]:not([aria-current="false"])[aria-busy="true"])'
+x += [
+ f'{W} [data-slot="composer-host"]{{animation-duration:3s!important}}',
+ f'{W} [data-slot="composer-host"]::after{{animation-duration:3s!important}}',
+ '[data-sidebar-row][aria-busy="true"]{background:linear-gradient(90deg,rgba(63,85,224,.12),rgba(160,48,159,.2),rgba(63,85,224,.12)) 0 0/200% 100%!important;animation:nbBtn 1.2s ease-in-out infinite alternate}',
+]
+# 4. Caret and focus in Nebula colors
+x += ['[data-slot="composer-host"] :is([contenteditable],textarea){caret-color:#e0559f}',
+      ':focus-visible{outline-color:#c04aa0!important}']
+# 5. Usage limits: show USED instead of LEFT, bars fill from the left with the used part
+C = '.p-4:has(>div>div>[aria-label*="% left"])'          # limit card on the Usage page
+B = 'button[aria-label*="% left"]'                        # its bar
+R = '[class*="grid-cols-subgrid"][aria-label$="% left"]'  # row in the thread-details panel
+x += [
+ C + '{background:rgba(26,14,28,.72)!important;border:1px solid rgba(255,255,255,.08)!important;border-radius:16px!important;box-shadow:0 18px 50px rgba(0,0,0,.35)}',
+ f'{C} .text-3xl,{C} .text-3xl+span>span:first-child,{R}>span:last-child{{font-size:0!important}}',
+ C + ' .text-3xl::after{content:counter(nu) "%";font-size:1.875rem;line-height:2.25rem}',
+ C + ' .text-3xl+span>span:first-child::after{content:"used";font-size:.875rem}',
+ R + '>span:last-child::after{content:counter(nu) "%";font-size:.75rem}',
+ B + '{transform:scaleX(-1);background:rgba(10,5,12,.6)!important}',
+ f'{B}>span:not([class~="w-0.5"]),{B}>div:last-child{{transform:scaleX(-1)}}',
+ B + f'>div:first-child>div{{background:repeating-linear-gradient(135deg,rgba(255,255,255,.14) 0 1px,transparent 1px 6px),linear-gradient(270deg,{G})!important;opacity:.85}}',
+ B + ' [class~="left-0"]{background:rgba(10,5,12,.85)!important;opacity:1!important}',
+ B + ' [class~="right-0"]{display:none!important}',
+ B + '>[class~="w-0.5"]{box-shadow:0 0 6px rgba(255,200,240,.8)}',
+ R + f'>span.relative{{transform:scaleX(-1);height:4px;background:linear-gradient(270deg,{G})!important;box-shadow:0 0 8px rgba(200,50,140,.3)}}',
+ R + '>span.relative>span[class~="left-0"]{background:rgba(40,22,44,1)!important}',
+]
+# counter nu = 100 - left; " 5% left" never matches "95% left"
+x += [f'.p-4:has(>div>div>[aria-label*=" {n}% left"]),[aria-label$=" {n}% left"]{{counter-reset:nu {100-n}}}' for n in range(101)]
+
+d["css"] = css.rstrip() + "\n" + "\n".join(x) + "\n"
+assert len(d["css"]) <= 50000, len(d["css"])
+json.dump(d, open(out, "w"), ensure_ascii=False, indent=2)
+print(len(d["css"]), "chars ->", out)
